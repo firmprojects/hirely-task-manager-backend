@@ -10,12 +10,12 @@ const swaggerDocument = {
   },
   servers: [
     {
-      url: '/api',
-      description: 'API server',
+      url: 'https://hirely-task-manager-backend.vercel.app',
+      description: 'Production server',
     },
   ],
   paths: {
-    '/tasks': {
+    '/api/tasks': {
       get: {
         summary: 'Get all tasks',
         responses: {
@@ -60,7 +60,7 @@ const swaggerDocument = {
         },
       },
     },
-    '/tasks/{id}': {
+    '/api/tasks/{id}': {
       get: {
         summary: 'Get a task by ID',
         parameters: [

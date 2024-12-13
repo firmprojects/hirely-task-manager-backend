@@ -14,6 +14,9 @@ const nextConfig = {
     ];
   },
   output: 'standalone',
+  env: {
+    NEXT_PUBLIC_API_URL: 'https://hirely-task-manager-backend.vercel.app',
+  },
 };
 
 module.exports = nextConfig;

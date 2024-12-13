@@ -40,8 +40,26 @@ export async function POST(request: Request) {
       return cors(new NextResponse(null, { status: 200 }));
     }
 
-    const body = await request.json();
-    const { title, description, dueDate, status } = body;
+    const { title, description, dueDate, status } = await request.json();
+
+    // Get the user ID from the authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      const response = NextResponse.json(
+        { error: 'Unauthorized - No token provided' },
+        { status: 401 }
+      );
+      return cors(response);
+    }
+
+    const userId = authHeader.split(' ')[1]; // Assuming the token is the user ID for now
+    if (!userId) {
+      const response = NextResponse.json(
+        { error: 'Unauthorized - Invalid token' },
+        { status: 401 }
+      );
+      return cors(response);
+    }
 
     if (!title) {
       const response = NextResponse.json(
@@ -57,6 +75,7 @@ export async function POST(request: Request) {
         description,
         dueDate: dueDate ? new Date(dueDate) : null,
         status: status || 'PENDING',
+        userId
       },
     });
 

@@ -140,6 +140,47 @@ const swaggerDocument = {
         },
       },
     },
+    '/users': {
+      post: {
+        summary: 'Create a new user',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/User',
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'User created successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/User',
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Invalid input',
+          },
+          '409': {
+            description: 'User already exists',
+          },
+        },
+      },
+      options: {
+        summary: 'CORS support',
+        responses: {
+          '204': {
+            description: 'CORS preflight request',
+          },
+        },
+      },
+    },
   },
   components: {
     schemas: {
@@ -164,6 +205,9 @@ const swaggerDocument = {
           status: {
             type: 'string',
             enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED'],
+          },
+          userId: {
+            type: 'string',
           },
           createdAt: {
             type: 'string',
@@ -196,6 +240,21 @@ const swaggerDocument = {
             enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED'],
           },
         },
+      },
+      User: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+          },
+          email: {
+            type: 'string',
+          },
+          name: {
+            type: 'string',
+          },
+        },
+        required: ['id', 'email'],
       },
     },
   },

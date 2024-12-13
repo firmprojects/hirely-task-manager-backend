@@ -52,3 +52,12 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Handle OPTIONS request for CORS
+export async function OPTIONS(request: NextRequest) {
+  return cors(
+    new NextResponse(null, {
+      status: 200,
+    })
+  );
+}

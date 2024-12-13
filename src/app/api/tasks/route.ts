@@ -2,19 +2,37 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { cors } from '@/lib/cors';
+import { auth } from '@/lib/firebase';
+
+export const runtime = 'nodejs';
+
+async function verifyAuth(request: NextRequest) {
+  const token = request.headers.get('X-Auth-Token');
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const decodedToken = await auth.verifyIdToken(token);
+    return decodedToken;
+  } catch (error) {
+    console.error('Auth error:', error);
+    return null;
+  }
+}
 
 // GET /api/tasks
 export async function GET(request: NextRequest) {
   try {
-    const userId = request.headers.get('X-User-Id');
-    if (!userId) {
+    const decodedToken = await verifyAuth(request);
+    if (!decodedToken) {
       return cors(
         NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       );
     }
 
     const tasks = await prisma.task.findMany({
-      where: { userId },
+      where: { userId: decodedToken.uid },
       orderBy: { createdAt: 'desc' },
     });
     
@@ -22,8 +40,9 @@ export async function GET(request: NextRequest) {
       NextResponse.json(tasks)
     );
   } catch (error) {
+    console.error('Error fetching tasks:', error);
     return cors(
-      NextResponse.json({ error: 'Failed to fetch tasks' }, { status: 500 })
+      NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     );
   }
 }
@@ -31,15 +50,15 @@ export async function GET(request: NextRequest) {
 // POST /api/tasks
 export async function POST(request: NextRequest) {
   try {
-    const userId = request.headers.get('X-User-Id');
-    if (!userId) {
+    const decodedToken = await verifyAuth(request);
+    if (!decodedToken) {
       return cors(
         NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       );
     }
 
     const body = await request.json();
-    const { title, description, dueDate, status } = body;
+    const { title, description, dueDate } = body;
 
     if (!title) {
       return cors(
@@ -47,33 +66,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create user if they don't exist
-    await prisma.user.upsert({
-      where: { id: userId },
-      update: {},
-      create: {
-        id: userId,
-        email: request.headers.get('X-User-Email') || '',
-      },
-    });
-
     const task = await prisma.task.create({
       data: {
         title,
         description,
         dueDate: dueDate ? new Date(dueDate) : null,
-        status: status || 'TODO',
-        userId,
+        userId: decodedToken.uid,
       },
     });
 
     return cors(
-      NextResponse.json(task, { status: 201 })
+      NextResponse.json(task)
     );
   } catch (error) {
-    console.error('Create task error:', error);
+    console.error('Error creating task:', error);
     return cors(
-      NextResponse.json({ error: 'Failed to create task' }, { status: 500 })
+      NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     );
   }
 }

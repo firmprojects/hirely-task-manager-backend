@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import prisma from '@/lib/prisma';
+import { createUser } from '@/lib/firebase';
 import { cors } from '@/lib/cors';
 
 // POST /api/users
@@ -18,18 +18,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await prisma.user.upsert({
-      where: { id },
-      update: {
-        email,
-        name,
-      },
-      create: {
-        id,
-        email,
-        name,
-      },
-    });
+    // Use the createUser function from firebase.ts
+    const user = await createUser(id, email, name);
 
     return cors(
       NextResponse.json(user, { status: 201 })

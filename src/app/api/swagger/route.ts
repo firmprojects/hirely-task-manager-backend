@@ -10,7 +10,7 @@ const swaggerDocument = {
   },
   servers: [
     {
-      url: '/api',
+      url: process.env.NEXT_PUBLIC_API_URL || '/api',
       description: 'API server',
     },
   ],
@@ -18,6 +18,7 @@ const swaggerDocument = {
     '/tasks': {
       get: {
         summary: 'Get all tasks',
+        security: [{ bearerAuth: [] }],
         responses: {
           '200': {
             description: 'List of tasks',
@@ -26,39 +27,49 @@ const swaggerDocument = {
                 schema: {
                   type: 'array',
                   items: {
-                    $ref: '#/components/schemas/Task',
-                  },
-                },
-              },
-            },
+                    $ref: '#/components/schemas/Task'
+                  }
+                }
+              }
+            }
           },
-        },
+          '401': {
+            description: 'Unauthorized'
+          }
+        }
       },
       post: {
         summary: 'Create a new task',
+        security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/TaskInput',
-              },
-            },
-          },
+                $ref: '#/components/schemas/TaskInput'
+              }
+            }
+          }
         },
         responses: {
-          '201': {
+          '200': {
             description: 'Task created successfully',
             content: {
               'application/json': {
                 schema: {
-                  $ref: '#/components/schemas/Task',
-                },
-              },
-            },
+                  $ref: '#/components/schemas/Task'
+                }
+              }
+            }
           },
-        },
-      },
+          '401': {
+            description: 'Unauthorized'
+          },
+          '400': {
+            description: 'Bad request'
+          }
+        }
+      }
     },
     '/tasks/{id}': {
       get: {
@@ -73,6 +84,7 @@ const swaggerDocument = {
             },
           },
         ],
+        security: [{ bearerAuth: [] }],
         responses: {
           '200': {
             description: 'Task details',
@@ -84,6 +96,12 @@ const swaggerDocument = {
               },
             },
           },
+          '401': {
+            description: 'Unauthorized'
+          },
+          '404': {
+            description: 'Task not found'
+          }
         },
       },
       put: {
@@ -98,6 +116,7 @@ const swaggerDocument = {
             },
           },
         ],
+        security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
           content: {
@@ -119,6 +138,15 @@ const swaggerDocument = {
               },
             },
           },
+          '401': {
+            description: 'Unauthorized'
+          },
+          '400': {
+            description: 'Bad request'
+          },
+          '404': {
+            description: 'Task not found'
+          }
         },
       },
       delete: {
@@ -133,10 +161,17 @@ const swaggerDocument = {
             },
           },
         ],
+        security: [{ bearerAuth: [] }],
         responses: {
           '200': {
             description: 'Task deleted successfully',
           },
+          '401': {
+            description: 'Unauthorized'
+          },
+          '404': {
+            description: 'Task not found'
+          }
         },
       },
     },
@@ -183,63 +218,78 @@ const swaggerDocument = {
     },
   },
   components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT'
+      }
+    },
     schemas: {
-      Task: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'integer',
-          },
-          title: {
-            type: 'string',
-          },
-          description: {
-            type: 'string',
-            nullable: true,
-          },
-          dueDate: {
-            type: 'string',
-            format: 'date-time',
-            nullable: true,
-          },
-          status: {
-            type: 'string',
-            enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED'],
-          },
-          userId: {
-            type: 'string',
-          },
-          createdAt: {
-            type: 'string',
-            format: 'date-time',
-          },
-          updatedAt: {
-            type: 'string',
-            format: 'date-time',
-          },
-        },
-      },
       TaskInput: {
         type: 'object',
         required: ['title'],
         properties: {
           title: {
             type: 'string',
+            description: 'Task title'
           },
           description: {
             type: 'string',
-            nullable: true,
+            description: 'Task description'
           },
           dueDate: {
             type: 'string',
             format: 'date-time',
-            nullable: true,
+            description: 'Task due date'
           },
           status: {
             type: 'string',
             enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED'],
+            description: 'Task status'
+          }
+        }
+      },
+      Task: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'integer',
+            description: 'Task ID'
           },
-        },
+          title: {
+            type: 'string',
+            description: 'Task title'
+          },
+          description: {
+            type: 'string',
+            description: 'Task description'
+          },
+          dueDate: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Task due date'
+          },
+          status: {
+            type: 'string',
+            enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED'],
+            description: 'Task status'
+          },
+          userId: {
+            type: 'string',
+            description: 'User ID'
+          },
+          createdAt: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Creation timestamp'
+          },
+          updatedAt: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Last update timestamp'
+          }
+        }
       },
       User: {
         type: 'object',

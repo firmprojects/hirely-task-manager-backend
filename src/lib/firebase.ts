@@ -25,3 +25,13 @@ const app = !getApps().length
   : getApps()[0];
 
 export const auth = getAuth(app);
+
+// Export a function to create a user (for use in API routes)
+export const createUser = async (id: string, email: string, name: string) => {
+  const user = await auth.createUser({
+    uid: id,
+    email,
+    displayName: name,
+  });
+  return user;
+};

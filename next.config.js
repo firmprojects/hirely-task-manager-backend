@@ -19,9 +19,9 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: 'https://hirely-task-manager-backend.vercel.app',
   },
-  experimental: {
-    runtime: 'nodejs',
-  }
+  // experimental: {
+  //   runtime: 'nodejs',
+  // }
 };
 
 module.exports = nextConfig;

@@ -14,8 +14,9 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  // Allow public access to Swagger documentation
-  if (request.url.includes('/api/swagger')) {
+  // Allow public access to Swagger documentation and user registration
+  if (request.url.includes('/api/swagger') || 
+      (request.url.includes('/api/users') && request.method === 'POST')) {
     return NextResponse.next();
   }
 

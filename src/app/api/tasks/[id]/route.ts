@@ -1,15 +1,26 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { cors } from '@/lib/cors';
 
 // GET /api/tasks/[id]
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const task = await prisma.task.findUnique({
-      where: { id: parseInt(params.id) },
+    const userId = request.headers.get('X-User-Id');
+    if (!userId) {
+      return cors(
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      );
+    }
+
+    const task = await prisma.task.findFirst({
+      where: { 
+        id: parseInt(params.id),
+        userId 
+      },
     });
 
     if (!task) {
@@ -30,10 +41,31 @@ export async function GET(
 
 // PUT /api/tasks/[id]
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const userId = request.headers.get('X-User-Id');
+    if (!userId) {
+      return cors(
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      );
+    }
+
+    // Check if task exists and belongs to user
+    const existingTask = await prisma.task.findFirst({
+      where: { 
+        id: parseInt(params.id),
+        userId 
+      },
+    });
+
+    if (!existingTask) {
+      return cors(
+        NextResponse.json({ error: 'Task not found' }, { status: 404 })
+      );
+    }
+
     const body = await request.json();
     const { title, description, dueDate, status } = body;
 
@@ -65,10 +97,31 @@ export async function PUT(
 
 // DELETE /api/tasks/[id]
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const userId = request.headers.get('X-User-Id');
+    if (!userId) {
+      return cors(
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      );
+    }
+
+    // Check if task exists and belongs to user
+    const existingTask = await prisma.task.findFirst({
+      where: { 
+        id: parseInt(params.id),
+        userId 
+      },
+    });
+
+    if (!existingTask) {
+      return cors(
+        NextResponse.json({ error: 'Task not found' }, { status: 404 })
+      );
+    }
+
     await prisma.task.delete({
       where: { id: parseInt(params.id) },
     });

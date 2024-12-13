@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { auth } from './lib/firebase';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Handle preflight requests
   if (request.method === 'OPTIONS') {
     const response = new NextResponse(null, { status: 204 });
@@ -18,6 +19,37 @@ export function middleware(request: NextRequest) {
     
     return response;
   }
+
+  // Skip auth for non-API routes
+  if (!request.url.includes('/api/')) {
+    return NextResponse.next();
+  }
   
-  return NextResponse.next();
+  try {
+    const token = request.headers.get('Authorization')?.split('Bearer ')[1];
+    
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const decodedToken = await auth.verifyIdToken(token);
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('X-User-Id', decodedToken.uid);
+    requestHeaders.set('X-User-Email', decodedToken.email || '');
+
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  } catch (error) {
+    console.error('Auth error:', error);
+    return NextResponse.json(
+      { error: 'Invalid token' },
+      { status: 401 }
+    );
+  }
 }

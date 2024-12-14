@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
-import { cors } from '@/lib/cors';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Credentials': 'true',
+};
 
 const swaggerDocument = {
   openapi: '3.0.0',
@@ -311,7 +317,9 @@ const swaggerDocument = {
 };
 
 export async function GET() {
-  return cors(
-    NextResponse.json(swaggerDocument)
-  );
+  return NextResponse.json(swaggerDocument, { headers: corsHeaders });
+}
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
 }

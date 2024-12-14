@@ -41,11 +41,19 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { title, description, dueDate, status } = body;
+    const { title, description, dueDate, status, userId } = body;
 
     if (!title) {
       const response = NextResponse.json(
         { error: 'Title is required' },
+        { status: 400 }
+      );
+      return cors(response);
+    }
+
+    if (!userId) {
+      const response = NextResponse.json(
+        { error: 'User ID is required' },
         { status: 400 }
       );
       return cors(response);
@@ -57,6 +65,7 @@ export async function POST(request: Request) {
         description,
         dueDate: dueDate ? new Date(dueDate) : null,
         status: status || 'PENDING',
+        userId,
       },
     });
 

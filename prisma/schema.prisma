@@ -6,13 +6,11 @@
 
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["jsonProtocol"]
 }
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL") // Add this for Vercel Postgres
+  url      = env("DATABASE_URL")
 }
 
 model Task {
@@ -21,8 +19,10 @@ model Task {
   description String?
   dueDate     DateTime?
   status      String    @default("PENDING")
+  userId      String    // Firebase user ID
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  @@index([userId])
   @@map("tasks")
 }

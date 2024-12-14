@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
-// import type { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { createUser } from '@/lib/firebase';
 import prisma from '@/lib/prisma';
 
+export const runtime = 'nodejs';
+
 // POST /api/users
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { id, email, name } = body;
@@ -56,4 +58,9 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+}
+
+// OPTIONS /api/users
+export async function OPTIONS() {
+  return NextResponse.json({});
 }

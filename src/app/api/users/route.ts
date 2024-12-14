@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createUser } from '@/lib/firebase';
 import prisma from '@/lib/prisma';
 import { auth } from '@/lib/firebase';
 
@@ -10,8 +9,30 @@ export async function POST(request: NextRequest) {
   try {
     console.log('Received request to create user');
     const body = await request.json();
+    console.log('Request body:', body);
+
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('No valid auth token provided');
+      return NextResponse.json({ error: 'No valid auth token provided' }, { status: 401 });
+    }
+
+    const idToken = authHeader.split('Bearer ')[1];
+    console.log('Verifying Firebase token...');
+    
+    try {
+      const decodedToken = await auth.verifyIdToken(idToken);
+      console.log('Token verified, decoded:', decodedToken);
+    } catch (error: any) {
+      console.error('Error verifying Firebase token:', error);
+      return NextResponse.json({ 
+        error: 'Failed to verify Firebase token',
+        details: error.message || error
+      }, { status: 401 });
+    }
+
     const { id, email, name } = body;
-    console.log('Request body:', { id, email, name });
+    console.log('Creating user with data:', { id, email, name });
 
     if (!id || !email) {
       console.log('Missing required fields');
@@ -21,69 +42,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if user already exists in database
+    console.log('Checking if user exists in database...');
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (existingUser) {
+      console.log('User already exists in the database:', existingUser);
+      return NextResponse.json({ error: 'User already exists' }, { status: 409 });
+    }
+
+    // Create user in database
+    console.log('Creating new user in database...');
     try {
-      // Check if user already exists in Firebase
-      try {
-        await auth.getUser(id);
-        console.log('User already exists in Firebase');
-      } catch (error) {
-        // If user doesn't exist, create them
-        console.log('Creating user in Firebase...');
-        const firebaseUser = await createUser(id, email, name);
-        console.log('Firebase user created:', firebaseUser);
-      }
-
-      // Check if user already exists in database
-      console.log('Checking if user exists in database...');
-      const existingUser = await prisma.user.findUnique({
-        where: { email }
-      });
-
-      if (existingUser) {
-        console.log('User already exists in database');
-        return NextResponse.json(existingUser, { status: 200 });
-      }
-
-      // Create user in database
-      console.log('Creating user in database...');
-      console.log('Data to create:', { id, email, name });
       const user = await prisma.user.create({
         data: {
           id,
           email,
-          name,
-        },
+          name
+        }
       });
-      console.log('Database user created:', user);
-
-      return NextResponse.json(user, { status: 201 });
+      console.log('User created successfully:', user);
+      return NextResponse.json(user);
     } catch (error: any) {
-      console.error('Error creating user:', error);
+      console.error('Error creating user in database:', error);
       console.error('Error details:', {
         name: error.name,
         message: error.message,
         code: error.code,
-        stack: error.stack
+        meta: error.meta
       });
-
-      if (error.code === 'P2002') {
-        return NextResponse.json(
-          { error: 'User already exists' },
-          { status: 409 }
-        );
-      }
-
-      return NextResponse.json(
-        { error: 'Failed to create user' },
-        { status: 500 }
-      );
+      return NextResponse.json({ 
+        error: 'Failed to create user in database',
+        details: error.message || error
+      }, { status: 500 });
     }
-  } catch (error) {
-    console.error('Error parsing request:', error);
-    return NextResponse.json(
-      { error: 'Invalid request body' },
-      { status: 400 }
-    );
+  } catch (error: any) {
+    console.error('Unexpected error:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message || error
+    }, { status: 500 });
   }
 }
 

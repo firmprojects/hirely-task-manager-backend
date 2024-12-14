@@ -5,13 +5,6 @@ import { auth } from '@/lib/firebase';
 
 export const runtime = 'nodejs';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Auth-Token',
-  'Access-Control-Allow-Credentials': 'true',
-};
-
 async function verifyAuth(request: NextRequest) {
   const token = request.headers.get('X-Auth-Token');
   if (!token) {
@@ -34,7 +27,7 @@ export async function GET(request: NextRequest) {
     if (!decodedToken) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401, headers: corsHeaders }
+        { status: 401 }
       );
     }
 
@@ -43,12 +36,12 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
     
-    return NextResponse.json(tasks, { headers: corsHeaders });
+    return NextResponse.json(tasks);
   } catch (error) {
     console.error('Error fetching tasks:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500, headers: corsHeaders }
+      { status: 500 }
     );
   }
 }
@@ -60,7 +53,7 @@ export async function POST(request: NextRequest) {
     if (!decodedToken) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401, headers: corsHeaders }
+        { status: 401 }
       );
     }
 
@@ -70,7 +63,7 @@ export async function POST(request: NextRequest) {
     if (!title) {
       return NextResponse.json(
         { error: 'Title is required' },
-        { status: 400, headers: corsHeaders }
+        { status: 400 }
       );
     }
 
@@ -83,17 +76,17 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(task, { headers: corsHeaders });
+    return NextResponse.json(task);
   } catch (error) {
     console.error('Error creating task:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500, headers: corsHeaders }
+      { status: 500 }
     );
   }
 }
 
 // OPTIONS /api/tasks
 export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+  return NextResponse.json({});
 }

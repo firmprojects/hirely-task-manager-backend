@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 
-const SwaggerUI = dynamic(() => import('swagger-ui-react'), {
+const SwaggerUI = dynamic(() => import('swagger-ui-react').catch(() => () => null), {
   ssr: false,
+  loading: () => <div>Loading API documentation...</div>
 });
 
 export default function ApiDocs() {

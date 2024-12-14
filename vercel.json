@@ -2,10 +2,6 @@
   "version": 2,
   "builds": [
     {
-      "src": "src/app/api/**/*.ts",
-      "use": "@vercel/node"
-    },
-    {
       "src": "package.json",
       "use": "@vercel/next"
     }
@@ -13,17 +9,5 @@
   "env": {
     "PRISMA_CLIENT_ENGINE_TYPE": "dataproxy"
   },
-  "buildCommand": "prisma generate && next build",
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1",
-      "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
-      }
-    }
-  ]
+  "buildCommand": "prisma generate && next build"
 }

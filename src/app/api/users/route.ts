@@ -6,7 +6,6 @@ import { auth } from '@/lib/firebase';
 
 export const runtime = 'nodejs';
 
-// POST /api/users
 export async function POST(request: NextRequest) {
   try {
     console.log('Received request to create user');
@@ -88,7 +87,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// OPTIONS /api/users
-export async function OPTIONS() {
+export async function OPTIONS(request: NextRequest) {
   return NextResponse.json({});
 }

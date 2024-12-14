@@ -5,6 +5,13 @@ export const config = {
   matcher: '/api/:path*',
 }
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Credentials': 'true',
+};
+
 export async function middleware(request: NextRequest) {
   // Handle preflight requests
   if (request.method === 'OPTIONS') {
@@ -14,10 +21,16 @@ export async function middleware(request: NextRequest) {
     });
   }
 
+  // Add CORS headers to all responses
+  const response = NextResponse.next();
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+
   // Allow public access to Swagger documentation and user registration
   if (request.url.includes('/api/swagger') || 
       (request.url.includes('/api/users') && request.method === 'POST')) {
-    return NextResponse.next();
+    return response;
   }
 
   const token = request.headers.get('Authorization')?.split('Bearer ')[1];
@@ -29,19 +42,5 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // Pass the token to the API route for verification
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('X-Auth-Token', token);
-
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
-}
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  return response;
 }

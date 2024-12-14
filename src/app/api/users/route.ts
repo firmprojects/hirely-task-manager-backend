@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createUser } from '@/lib/firebase';
-import { cors } from '@/lib/cors';
+import prisma from '@/lib/prisma';
 
 // POST /api/users
 export async function POST(request: NextRequest) {
@@ -10,44 +10,50 @@ export async function POST(request: NextRequest) {
     const { id, email, name } = body;
 
     if (!id || !email) {
-      return cors(
-        NextResponse.json(
-          { error: 'ID and email are required' },
-          { status: 400 }
-        )
+      return NextResponse.json(
+        { error: 'ID and email are required' },
+        { status: 400 }
       );
     }
 
-    // Use the createUser function from firebase.ts
-    const user = await createUser(id, email, name);
+    try {
+      // Create user in Firebase
+      console.log('Creating user in Firebase...');
+      const firebaseUser = await createUser(id, email, name);
+      console.log('Firebase user created:', firebaseUser);
 
-    return cors(
-      NextResponse.json(user, { status: 201 })
-    );
-  } catch (error) {
-    console.error('Create user error:', error);
-    if ((error as any).code === 'P2002') {
-      return cors(
-        NextResponse.json(
+      // Create user in database
+      console.log('Creating user in database...');
+      const user = await prisma.user.create({
+        data: {
+          id,
+          email,
+          name,
+        },
+      });
+      console.log('Database user created:', user);
+
+      return NextResponse.json(user, { status: 201 });
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+
+      if (error.code === 'P2002') {
+        return NextResponse.json(
           { error: 'User already exists' },
           { status: 409 }
-        )
-      );
-    }
-    return cors(
-      NextResponse.json(
+        );
+      }
+
+      return NextResponse.json(
         { error: 'Failed to create user' },
         { status: 500 }
-      )
+      );
+    }
+  } catch (error) {
+    console.error('Error parsing request:', error);
+    return NextResponse.json(
+      { error: 'Invalid request body' },
+      { status: 400 }
     );
   }
-}
-
-// Handle OPTIONS request for CORS
-export async function OPTIONS(request: NextRequest) {
-  return cors(
-    new NextResponse(null, {
-      status: 200,
-    })
-  );
 }

@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+// import type { NextRequest } from 'next/server';
 import { createUser } from '@/lib/firebase';
 import prisma from '@/lib/prisma';
 
 // POST /api/users
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { id, email, name } = body;

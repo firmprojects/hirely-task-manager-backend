@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from './firebase';
+import { auth } from '@/lib/firebase';
 
 export type AuthResult = {
   userId?: string;

@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 // Log environment variable status
 console.log('Environment variables status:');
 console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'Present' : 'Missing');
+console.log('Current DATABASE_URL:', process.env.DATABASE_URL);
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('Current working directory:', process.cwd());
 

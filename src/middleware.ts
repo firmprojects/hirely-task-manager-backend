@@ -27,8 +27,9 @@ export async function middleware(request: NextRequest) {
     response.headers.set(key, value);
   });
 
-  // Allow public access to Swagger documentation and user registration
+  // Allow public access to Swagger documentation, user registration, and auth endpoints
   if (request.url.includes('/api/swagger') || 
+      request.url.includes('/api/auth/token') ||
       (request.url.includes('/api/users') && request.method === 'POST')) {
     return response;
   }

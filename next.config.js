@@ -12,9 +12,8 @@ const nextConfig = {
     }
     return config;
   },
-  output: 'standalone',
   env: {
-    NEXT_PUBLIC_API_URL: 'https://hirely-task-manager-backend.vercel.app',
+    NEXT_PUBLIC_API_URL: 'https://hirely-task-backend.netlify.app',
   }
 };
 

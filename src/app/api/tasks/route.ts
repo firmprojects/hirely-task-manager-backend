@@ -6,17 +6,18 @@ import { auth } from '@/lib/firebase';
 export const runtime = 'nodejs';
 
 async function verifyAuth(request: NextRequest) {
-  const token = request.headers.get('X-Auth-Token');
-  if (!token) {
-    return null;
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return new Response('Unauthorized: No token provided', { status: 401 });
   }
 
+  const token = authHeader.split('Bearer ')[1];
   try {
     const decodedToken = await auth.verifyIdToken(token);
     return decodedToken;
   } catch (error) {
     console.error('Auth error:', error);
-    return null;
+    return new Response('Unauthorized: Invalid token', { status: 401 });
   }
 }
 
@@ -24,11 +25,8 @@ async function verifyAuth(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const decodedToken = await verifyAuth(request);
-    if (!decodedToken) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (decodedToken instanceof Response) {
+      return decodedToken;
     }
 
     const tasks = await prisma.task.findMany({
@@ -50,11 +48,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const decodedToken = await verifyAuth(request);
-    if (!decodedToken) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (decodedToken instanceof Response) {
+      return decodedToken;
     }
 
     const body = await request.json();
@@ -67,11 +62,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!decodedToken.uid) {
+      return NextResponse.json(
+        { error: 'User ID not found' },
+        { status: 400 }
+      );
+    }
+
+    let parsedDueDate = null;
+    if (dueDate) {
+      parsedDueDate = new Date(dueDate);
+      if (isNaN(parsedDueDate.getTime())) {
+        return NextResponse.json(
+          { error: 'Invalid due date format' },
+          { status: 400 }
+        );
+      }
+    }
+
     const task = await prisma.task.create({
       data: {
         title,
         description,
-        dueDate: dueDate ? new Date(dueDate) : null,
+        dueDate: parsedDueDate,
         userId: decodedToken.uid,
       },
     });

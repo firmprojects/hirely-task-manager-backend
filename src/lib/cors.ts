@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 
 const allowedOrigins = [
-  'http://localhost:5173',
-  'https://hirely-taskmanager-frontend.netlify.app/',
+  'https://hirely-taskmanager-frontend.netlify.app',
   'https://kelly-task-manager.vercel.app'
 ];
 

@@ -13,7 +13,7 @@ const nextConfig = {
       },
     ];
   },
-  output: 'standalone',
+  output: 'serverless',  
   env: {
     NEXT_PUBLIC_API_URL: 'https://hirely-task-manager-backend.vercel.app',
     DATABASE_URL: process.env.DATABASE_URL,

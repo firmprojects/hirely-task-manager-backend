@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 import './swagger-ui.css';
 
 // Create a loading component
@@ -12,7 +12,7 @@ const LoadingDocs = () => (
 );
 
 // Dynamically import SwaggerUI with no SSR
-const SwaggerUI = dynamic(
+const SwaggerUI = dynamicImport(
   () => import('swagger-ui-react').then((mod) => mod.default),
   { 
     ssr: false,

@@ -3,12 +3,15 @@ import type { NextRequest } from 'next/server';
 
 const allowedOrigins = [
   'https://hirely-taskmanager-frontend.netlify.app',
-  'https://kelly-task-manager.vercel.app'
+  'https://kelly-task-manager.vercel.app',
+  'http://localhost:5173' // Keep this for local development
 ];
 
 export function middleware(request: NextRequest) {
   // Get the origin from the request headers
   const origin = request.headers.get('origin') || '';
+  
+  console.log('Received request from origin:', origin); // Add logging
   
   // Handle preflight requests
   if (request.method === 'OPTIONS') {
@@ -26,6 +29,9 @@ export function middleware(request: NextRequest) {
         'Access-Control-Allow-Headers',
         'Content-Type, Authorization'
       );
+      console.log('CORS headers set for origin:', origin); // Add logging
+    } else {
+      console.log('Origin not allowed:', origin); // Add logging
     }
     
     return response;
@@ -38,6 +44,9 @@ export function middleware(request: NextRequest) {
   if (allowedOrigins.includes(origin)) {
     response.headers.set('Access-Control-Allow-Origin', origin);
     response.headers.set('Access-Control-Allow-Credentials', 'true');
+    console.log('CORS headers set for non-OPTIONS request from origin:', origin); // Add logging
+  } else {
+    console.log('Origin not allowed for non-OPTIONS request:', origin); // Add logging
   }
   
   return response;

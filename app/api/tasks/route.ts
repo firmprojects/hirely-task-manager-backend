@@ -1,19 +1,29 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { cors } from '@/lib/cors';
+import { verifyAuth } from '@/lib/auth';
 
 // GET /api/tasks
 export async function GET(request: Request) {
   try {
-    // Check database connection
-    await prisma.$connect();
-    
     // Handle preflight request
     if (request.method === 'OPTIONS') {
       return cors(new NextResponse(null, { status: 200 }));
     }
 
+    // Verify authentication
+    const authResult = await verifyAuth(request);
+    if (authResult.error) {
+      return cors(authResult.error);
+    }
+
+    // Check database connection
+    await prisma.$connect();
+
     const tasks = await prisma.task.findMany({
+      where: {
+        userId: authResult.userId
+      },
       orderBy: { createdAt: 'desc' },
     });
     
@@ -34,26 +44,23 @@ export async function GET(request: Request) {
 // POST /api/tasks
 export async function POST(request: Request) {
   try {
-    await prisma.$connect();
-    
     if (request.method === 'OPTIONS') {
       return cors(new NextResponse(null, { status: 200 }));
     }
 
+    // Verify authentication
+    const authResult = await verifyAuth(request);
+    if (authResult.error) {
+      return cors(authResult.error);
+    }
+
+    await prisma.$connect();
     const body = await request.json();
-    const { title, description, dueDate, status, userId } = body;
+    const { title, description, dueDate, status } = body;
 
     if (!title) {
       const response = NextResponse.json(
         { error: 'Title is required' },
-        { status: 400 }
-      );
-      return cors(response);
-    }
-
-    if (!userId) {
-      const response = NextResponse.json(
-        { error: 'User ID is required' },
         { status: 400 }
       );
       return cors(response);
@@ -65,7 +72,7 @@ export async function POST(request: Request) {
         description,
         dueDate: dueDate ? new Date(dueDate) : null,
         status: status || 'PENDING',
-        userId,
+        userId: authResult.userId,
       },
     });
 

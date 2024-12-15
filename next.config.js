@@ -13,7 +13,7 @@ const nextConfig = {
       },
     ];
   },
-  output: 'serverless',  
+  // Removed output configuration to use Next.js defaults
   env: {
     NEXT_PUBLIC_API_URL: 'https://hirely-task-manager-backend.vercel.app',
     DATABASE_URL: process.env.DATABASE_URL,

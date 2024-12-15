@@ -11,15 +11,19 @@ export async function GET(request: Request) {
       return cors(new NextResponse(null, { status: 200 }));
     }
 
+    console.log('Verifying authentication...');
     // Verify authentication
     const authResult = await verifyAuth(request);
     if (authResult.error) {
+      console.error('Authentication failed:', authResult.error);
       return cors(authResult.error);
     }
 
+    console.log('Connecting to database...');
     // Check database connection
     await prisma.$connect();
 
+    console.log('Fetching tasks for user:', authResult.userId);
     const tasks = await prisma.task.findMany({
       where: {
         userId: authResult.userId
@@ -31,6 +35,9 @@ export async function GET(request: Request) {
     return cors(response);
   } catch (error) {
     console.error('Error fetching tasks:', error);
+    if (error instanceof Error) {
+      console.error('Error stack:', error.stack);
+    }
     const response = NextResponse.json(
       { error: 'Failed to fetch tasks', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

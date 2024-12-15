@@ -13,28 +13,15 @@ const nextConfig = {
       },
     ];
   },
-  // Removed output configuration to use Next.js defaults
   env: {
-    NEXT_PUBLIC_API_URL: 'https://hirely-task-manager-backend.vercel.app',
+    NEXT_PUBLIC_API_URL: 'https://kelly-task-manager.vercel.app',
     DATABASE_URL: process.env.DATABASE_URL,
     FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
     FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
     FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
   },
   typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
-    // !! WARN !!
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
-  },
-  experimental: {
-    serverComponentsExternalPackages: ['swagger-ui-react'],
+    ignoreBuildErrors: true, // Disable linting errors on build
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {

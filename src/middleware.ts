@@ -3,8 +3,8 @@ import type { NextRequest } from 'next/server';
 
 const allowedOrigins = [
   'http://localhost:5173',
-  'http://localhost:3000',
-  'https://hireley.vercel.app'
+  // 'http://localhost:3000',
+  'https://kelly-task-manager.vercel.app/'
 ];
 
 export function middleware(request: NextRequest) {

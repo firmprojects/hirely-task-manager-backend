@@ -1,103 +1,162 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { verifyAuthToken } from '@/lib/firebase';
+import { prisma } from '@/lib/prisma';
+import { headers } from 'next/headers';
 import { cors } from '@/lib/cors';
-import { verifyAuth } from '@/lib/auth';
 
 // GET /api/tasks
 export async function GET(request: Request) {
+  const headersList = headers();
+  const authHeader = headersList.get('authorization');
+
   try {
-    // Handle preflight request
-    if (request.method === 'OPTIONS') {
-      return cors(new NextResponse(null, { status: 200 }));
+    console.log('Processing GET /api/tasks request');
+    
+    if (!authHeader) {
+      console.error('Authorization header missing');
+      return cors(NextResponse.json(
+        { error: 'Authorization header is required' },
+        { status: 401 }
+      ));
     }
 
-    console.log('Verifying authentication...');
-    // Verify authentication
-    const authResult = await verifyAuth(request);
-    if (authResult.error) {
-      console.error('Authentication failed:', authResult.error);
-      return cors(authResult.error);
+    const token = authHeader.split('Bearer ')[1];
+    if (!token) {
+      console.error('Invalid authorization header format');
+      return cors(NextResponse.json(
+        { error: 'Invalid authorization header format' },
+        { status: 401 }
+      ));
     }
 
-    console.log('Connecting to database...');
-    // Check database connection
-    await prisma.$connect();
+    console.log('Verifying auth token...');
+    const decodedToken = await verifyAuthToken(token);
+    console.log('Token verified successfully for user:', decodedToken.uid);
 
-    console.log('Fetching tasks for user:', authResult.userId);
+    console.log('Fetching tasks from database...');
     const tasks = await prisma.task.findMany({
       where: {
-        userId: authResult.userId
+        userId: decodedToken.uid
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
-    
-    const response = NextResponse.json(tasks);
-    return cors(response);
+    console.log(`Successfully retrieved ${tasks.length} tasks`);
+
+    return cors(NextResponse.json({ tasks }));
+
   } catch (error) {
-    console.error('Error fetching tasks:', error);
+    console.error('Error in GET /api/tasks:', error);
+    
     if (error instanceof Error) {
-      console.error('Error stack:', error.stack);
+      // Check for specific error types
+      if (error.message.includes('auth')) {
+        return cors(NextResponse.json(
+          { error: 'Authentication failed', details: error.message },
+          { status: 401 }
+        ));
+      }
+      if (error.message.includes('prisma')) {
+        return cors(NextResponse.json(
+          { error: 'Database error', details: error.message },
+          { status: 500 }
+        ));
+      }
+      return cors(NextResponse.json(
+        { error: 'Internal server error', details: error.message },
+        { status: 500 }
+      ));
     }
-    const response = NextResponse.json(
-      { error: 'Failed to fetch tasks', details: error instanceof Error ? error.message : 'Unknown error' },
+    
+    return cors(NextResponse.json(
+      { error: 'An unexpected error occurred' },
       { status: 500 }
-    );
-    return cors(response);
-  } finally {
-    await prisma.$disconnect();
+    ));
   }
 }
 
 // POST /api/tasks
 export async function POST(request: Request) {
+  const headersList = headers();
+  const authHeader = headersList.get('authorization');
+
   try {
-    if (request.method === 'OPTIONS') {
-      return cors(new NextResponse(null, { status: 200 }));
+    console.log('Processing POST /api/tasks request');
+    
+    if (!authHeader) {
+      console.error('Authorization header missing');
+      return cors(NextResponse.json(
+        { error: 'Authorization header is required' },
+        { status: 401 }
+      ));
     }
 
-    // Verify authentication
-    const authResult = await verifyAuth(request);
-    if (authResult.error) {
-      return cors(authResult.error);
+    const token = authHeader.split('Bearer ')[1];
+    if (!token) {
+      console.error('Invalid authorization header format');
+      return cors(NextResponse.json(
+        { error: 'Invalid authorization header format' },
+        { status: 401 }
+      ));
     }
 
-    await prisma.$connect();
+    console.log('Verifying auth token...');
+    const decodedToken = await verifyAuthToken(token);
+    console.log('Token verified successfully for user:', decodedToken.uid);
+
     const body = await request.json();
-    const { title, description, dueDate, status } = body;
-
-    if (!title) {
-      const response = NextResponse.json(
+    
+    if (!body.title) {
+      return cors(NextResponse.json(
         { error: 'Title is required' },
         { status: 400 }
-      );
-      return cors(response);
+      ));
     }
 
+    console.log('Creating new task in database...');
     const task = await prisma.task.create({
       data: {
-        title,
-        description,
-        dueDate: dueDate ? new Date(dueDate) : null,
-        status: status || 'PENDING',
-        userId: authResult.userId,
-      },
+        title: body.title,
+        description: body.description || '',
+        userId: decodedToken.uid,
+      }
     });
+    console.log('Task created successfully:', task.id);
 
-    const response = NextResponse.json(task, { status: 201 });
-    return cors(response);
+    return cors(NextResponse.json({ task }));
+
   } catch (error) {
-    console.error('Error creating task:', error);
-    const response = NextResponse.json(
-      { error: 'Failed to create task', details: error instanceof Error ? error.message : 'Unknown error' },
+    console.error('Error in POST /api/tasks:', error);
+    
+    if (error instanceof Error) {
+      if (error.message.includes('auth')) {
+        return cors(NextResponse.json(
+          { error: 'Authentication failed', details: error.message },
+          { status: 401 }
+        ));
+      }
+      if (error.message.includes('prisma')) {
+        return cors(NextResponse.json(
+          { error: 'Database error', details: error.message },
+          { status: 500 }
+        ));
+      }
+      return cors(NextResponse.json(
+        { error: 'Internal server error', details: error.message },
+        { status: 500 }
+      ));
+    }
+    
+    return cors(NextResponse.json(
+      { error: 'An unexpected error occurred' },
       { status: 500 }
-    );
-    return cors(response);
-  } finally {
-    await prisma.$disconnect();
+    ));
   }
 }
 
 // OPTIONS /api/tasks
 export async function OPTIONS(request: Request) {
+  console.log('OPTIONS /api/tasks - Request received');
   return cors(new NextResponse(null, { status: 200 }));
 }

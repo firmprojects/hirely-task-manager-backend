@@ -14,156 +14,30 @@ const swaggerDocument = {
       description: 'API server',
     },
   ],
-  paths: {
-    '/tasks': {
-      get: {
-        summary: 'Get all tasks',
-        responses: {
-          '200': {
-            description: 'List of tasks',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'array',
-                  items: {
-                    $ref: '#/components/schemas/Task',
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      post: {
-        summary: 'Create a new task',
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: {
-                $ref: '#/components/schemas/TaskInput',
-              },
-            },
-          },
-        },
-        responses: {
-          '201': {
-            description: 'Task created successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  $ref: '#/components/schemas/Task',
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    '/tasks/{id}': {
-      get: {
-        summary: 'Get a task by ID',
-        parameters: [
-          {
-            name: 'id',
-            in: 'path',
-            required: true,
-            schema: {
-              type: 'integer',
-            },
-          },
-        ],
-        responses: {
-          '200': {
-            description: 'Task details',
-            content: {
-              'application/json': {
-                schema: {
-                  $ref: '#/components/schemas/Task',
-                },
-              },
-            },
-          },
-        },
-      },
-      put: {
-        summary: 'Update a task',
-        parameters: [
-          {
-            name: 'id',
-            in: 'path',
-            required: true,
-            schema: {
-              type: 'integer',
-            },
-          },
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: {
-                $ref: '#/components/schemas/TaskInput',
-              },
-            },
-          },
-        },
-        responses: {
-          '200': {
-            description: 'Task updated successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  $ref: '#/components/schemas/Task',
-                },
-              },
-            },
-          },
-        },
-      },
-      delete: {
-        summary: 'Delete a task',
-        parameters: [
-          {
-            name: 'id',
-            in: 'path',
-            required: true,
-            schema: {
-              type: 'integer',
-            },
-          },
-        ],
-        responses: {
-          '200': {
-            description: 'Task deleted successfully',
-          },
-        },
-      },
-    },
-  },
   components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+    },
     schemas: {
       Task: {
         type: 'object',
         properties: {
           id: {
-            type: 'integer',
+            type: 'string',
+            format: 'uuid',
           },
           title: {
             type: 'string',
           },
           description: {
             type: 'string',
-            nullable: true,
           },
-          dueDate: {
+          userId: {
             type: 'string',
-            format: 'date-time',
-            nullable: true,
-          },
-          status: {
-            type: 'string',
-            enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED'],
           },
           createdAt: {
             type: 'string',
@@ -174,26 +48,155 @@ const swaggerDocument = {
             format: 'date-time',
           },
         },
+        required: ['id', 'title', 'userId'],
       },
       TaskInput: {
         type: 'object',
-        required: ['title'],
         properties: {
           title: {
             type: 'string',
+            description: 'Title of the task',
           },
           description: {
             type: 'string',
-            nullable: true,
+            description: 'Description of the task',
           },
-          dueDate: {
+        },
+        required: ['title'],
+      },
+      Error: {
+        type: 'object',
+        properties: {
+          error: {
             type: 'string',
-            format: 'date-time',
-            nullable: true,
           },
-          status: {
+          details: {
             type: 'string',
-            enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED'],
+          },
+        },
+        required: ['error'],
+      },
+    },
+  },
+  security: [
+    {
+      bearerAuth: [],
+    },
+  ],
+  paths: {
+    '/tasks': {
+      get: {
+        summary: 'Get all tasks',
+        description: 'Retrieve all tasks for the authenticated user',
+        security: [
+          {
+            bearerAuth: [],
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'List of tasks',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    tasks: {
+                      type: 'array',
+                      items: {
+                        $ref: '#/components/schemas/Task',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Error',
+                },
+              },
+            },
+          },
+          '500': {
+            description: 'Internal Server Error',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Error',
+                },
+              },
+            },
+          },
+        },
+      },
+      post: {
+        summary: 'Create a new task',
+        description: 'Create a new task for the authenticated user',
+        security: [
+          {
+            bearerAuth: [],
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/TaskInput',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Task created successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    task: {
+                      $ref: '#/components/schemas/Task',
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Bad Request',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Error',
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Error',
+                },
+              },
+            },
+          },
+          '500': {
+            description: 'Internal Server Error',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Error',
+                },
+              },
+            },
           },
         },
       },
@@ -202,7 +205,5 @@ const swaggerDocument = {
 };
 
 export async function GET() {
-  return cors(
-    NextResponse.json(swaggerDocument)
-  );
+  return cors(NextResponse.json(swaggerDocument));
 }

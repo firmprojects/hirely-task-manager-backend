@@ -4,19 +4,19 @@ import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import './swagger-ui.css';
 
-// Dynamically import SwaggerUI with no server-side rendering and proper configuration
+// Create a loading component
+const LoadingDocs = () => (
+  <div className="container mx-auto p-4">
+    <div>Loading API documentation...</div>
+  </div>
+);
+
+// Dynamically import SwaggerUI with no SSR
 const SwaggerUI = dynamic(
-  async () => {
-    const swagger = await import('swagger-ui-react');
-    return swagger.default;
-  },
+  () => import('swagger-ui-react').then((mod) => mod.default),
   { 
     ssr: false,
-    loading: () => (
-      <div className="container mx-auto p-4">
-        <div>Loading API documentation...</div>
-      </div>
-    )
+    loading: LoadingDocs,
   }
 );
 
@@ -28,7 +28,7 @@ export default function ApiDocs() {
   }, []);
 
   if (!mounted) {
-    return null;
+    return <LoadingDocs />;
   }
 
   return (
@@ -41,3 +41,7 @@ export default function ApiDocs() {
     </div>
   );
 }
+
+// Add export config to disable static generation
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;

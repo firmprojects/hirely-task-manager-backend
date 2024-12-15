@@ -1,17 +1,13 @@
-import { initializeApp, cert, getApps } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
+import * as admin from 'firebase-admin';
+import { getApps, initializeApp, cert } from 'firebase-admin/app';
+import { DecodedIdToken } from 'firebase-admin/auth';
 
-try {
-  if (!getApps().length) {
-    // Check if all required environment variables are present
-    if (!process.env.FIREBASE_PROJECT_ID) {
-      throw new Error('FIREBASE_PROJECT_ID is not set');
-    }
-    if (!process.env.FIREBASE_CLIENT_EMAIL) {
-      throw new Error('FIREBASE_CLIENT_EMAIL is not set');
-    }
-    if (!process.env.FIREBASE_PRIVATE_KEY) {
-      throw new Error('FIREBASE_PRIVATE_KEY is not set');
+if (!getApps().length) {
+  try {
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    
+    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !privateKey) {
+      throw new Error('Missing Firebase configuration');
     }
 
     console.log('Initializing Firebase Admin with Project ID:', process.env.FIREBASE_PROJECT_ID);
@@ -20,14 +16,26 @@ try {
       credential: cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        privateKey: privateKey,
       }),
     });
+    
     console.log('Firebase Admin initialized successfully');
+  } catch (error) {
+    console.error('Error initializing Firebase Admin:', error);
+    throw error;
   }
-} catch (error) {
-  console.error('Error initializing Firebase Admin:', error);
-  throw error; // Re-throw the error to prevent the app from starting with invalid Firebase config
 }
 
-export const auth = getAuth();
+export const verifyAuthToken = async (token: string): Promise<DecodedIdToken> => {
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    return decodedToken;
+  } catch (error) {
+    console.error('Error verifying auth token:', error);
+    throw error;
+  }
+};
+
+export const auth = admin.auth();
+export const firestore = admin.firestore();

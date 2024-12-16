@@ -82,7 +82,8 @@ export async function PUT(
 
     const decodedToken = await verifyAuthToken(token);
     const body = await request.json();
-    console.log('Request body:', body);
+    console.log('Incoming request body:', body);
+    console.log('User ID from token:', decodedToken.uid);
     
     const { title, description, dueDate, status } = body;
 
@@ -152,11 +153,12 @@ export async function PUT(
         } else if (error.code === 'P2002') {
             errorMessage = 'Unique constraint failed';
         }
+    } else {
+        // Log the full error for unexpected issues
+        console.error('Unexpected error:', error);
     }
-    return cors(NextResponse.json({
-        error: errorMessage,
-        details: error instanceof Error ? error.message : 'An unexpected error occurred'
-    }, { status: 500 }));
+    // Send the error message in the response
+    return cors(NextResponse.json({ error: errorMessage, toast: true }, { status: 500 }));
   }
 }
 

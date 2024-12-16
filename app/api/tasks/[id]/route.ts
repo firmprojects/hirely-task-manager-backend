@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import {prisma} from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { cors } from '@/lib/cors';
 import { headers } from 'next/headers';
 import { verifyAuthToken } from '@/lib/firebase';
@@ -141,37 +143,18 @@ export async function PUT(
 
   } catch (error) {
     console.error('Error in PUT /api/tasks/[id]:', error);
-    
-    // Handle Prisma-specific errors
-    if (error instanceof Error) {
-      if (error.message.includes('Record to update not found')) {
-        return cors(NextResponse.json({
-          error: 'Task not found or you do not have permission to update it',
-          details: error.message
-        }, { status: 404 }));
-      }
-      
-      if (error.message.includes('Invalid `prisma.task.update()`')) {
-        return cors(NextResponse.json({
-          error: 'Invalid task data provided',
-          details: error.message
-        }, { status: 400 }));
-      }
-
-      // Handle date parsing errors
-      if (error.message.includes('Invalid date')) {
-        return cors(NextResponse.json({
-          error: 'Invalid date format',
-          details: 'Please provide the date in ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)'
-        }, { status: 400 }));
-      }
+    let errorMessage = 'Failed to update task';
+    if (error instanceof PrismaClientKnownRequestError) {
+        // Handle known Prisma errors
+        if (error.code === 'P2025') {
+            errorMessage = 'Task not found';
+        } else if (error.code === 'P2002') {
+            errorMessage = 'Unique constraint failed';
+        }
     }
-
-    // Generic error response with details
     return cors(NextResponse.json({
-      error: 'Failed to update task',
-      details: error instanceof Error ? error.message : 'An unexpected error occurred',
-      timestamp: new Date().toISOString()
+        error: errorMessage,
+        details: error instanceof Error ? error.message : 'An unexpected error occurred'
     }, { status: 500 }));
   }
 }

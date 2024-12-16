@@ -3,8 +3,7 @@ import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.int
 
 const allowedOrigins = [
   'https://hirely-taskmanager-frontend.netlify.app',
-  'https://kelly-task-manager.vercel.app',
-  // 'http://localhost:5173' // Keep this for local development
+  'https://kelly-task-manager.vercel.app'
 ];
 
 export function cors(response: NextResponse) {

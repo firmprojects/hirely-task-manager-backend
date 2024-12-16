@@ -29,17 +29,43 @@ export async function GET(
 }
 
 // PUT /api/tasks/[id]
+import type { NextRequest } from 'next/server';
+import { verifyAuth, unauthorized } from '@/middleware/auth';
+
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    // Verify authentication
+    const decodedToken = await verifyAuth(request);
+    if (!decodedToken) {
+      return cors(unauthorized());
+    }
+
     const body = await request.json();
     const { title, description, dueDate, status } = body;
 
     if (!title) {
       return cors(
         NextResponse.json({ error: 'Title is required' }, { status: 400 })
+      );
+    }
+
+    // First check if the task exists and belongs to the user
+    const existingTask = await prisma.task.findUnique({
+      where: { id: parseInt(params.id) },
+    });
+
+    if (!existingTask) {
+      return cors(
+        NextResponse.json({ error: 'Task not found' }, { status: 404 })
+      );
+    }
+
+    if (existingTask.userId !== decodedToken.uid) {
+      return cors(
+        NextResponse.json({ error: 'Unauthorized to update this task' }, { status: 403 })
       );
     }
 
@@ -53,12 +79,14 @@ export async function PUT(
       },
     });
 
-    return cors(
-      NextResponse.json(task)
-    );
+    return cors(NextResponse.json(task));
   } catch (error) {
+    console.error('Error updating task:', error);
     return cors(
-      NextResponse.json({ error: 'Failed to update task' }, { status: 500 })
+      NextResponse.json({ 
+        error: 'Failed to update task',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }, { status: 500 })
     );
   }
 }

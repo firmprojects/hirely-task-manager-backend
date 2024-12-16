@@ -80,59 +80,71 @@ export async function PUT(
 
     const decodedToken = await verifyAuthToken(token);
     const body = await request.json();
+    console.log('Request body:', body);
+    
     const { title, description, dueDate, status } = body;
 
     if (!title) {
-      return cors(
-        NextResponse.json({ error: 'Title is required' }, { status: 400 })
-      );
+      return cors(NextResponse.json(
+        { error: 'Title is required' },
+        { status: 400 }
+      ));
+    }
+
+    const taskId = parseInt(params.id);
+    if (isNaN(taskId)) {
+      return cors(NextResponse.json(
+        { error: 'Invalid task ID' },
+        { status: 400 }
+      ));
     }
 
     // First check if the task exists and belongs to the user
-    const existingTask = await prisma.task.findUnique({
-      where: { 
-        id: parseInt(params.id),
+    const existingTask = await prisma.task.findFirst({
+      where: {
+        id: taskId,
         userId: decodedToken.uid
-      },
+      }
     });
 
     if (!existingTask) {
-      return cors(
-        NextResponse.json({ error: 'Task not found or unauthorized' }, { status: 404 })
-      );
+      return cors(NextResponse.json(
+        { error: 'Task not found or unauthorized' },
+        { status: 404 }
+      ));
     }
+
+    // Prepare update data
+    const updateData: any = {
+      title,
+      description: description || null,
+      status: status || existingTask.status,
+    };
+
+    // Only update dueDate if it's provided
+    if (dueDate !== undefined) {
+      updateData.dueDate = dueDate ? new Date(dueDate) : null;
+    }
+
+    console.log('Updating task with data:', updateData);
 
     const task = await prisma.task.update({
-      where: { 
-        id: parseInt(params.id),
+      where: {
+        id: taskId,
         userId: decodedToken.uid
       },
-      data: {
-        title,
-        description,
-        dueDate: dueDate ? new Date(dueDate) : null,
-        status,
-      },
+      data: updateData
     });
 
-    return cors(
-      NextResponse.json(task)
-    );
+    console.log('Updated task:', task);
+    return cors(NextResponse.json(task));
+
   } catch (error) {
     console.error('Error in PUT /api/tasks/[id]:', error);
-    if (error instanceof Error) {
-      if (error.message.includes('Record to update not found')) {
-        return cors(
-          NextResponse.json({ error: 'Task not found' }, { status: 404 })
-        );
-      }
-    }
-    return cors(
-      NextResponse.json({ 
-        error: 'Failed to update task',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }, { status: 500 })
-    );
+    return cors(NextResponse.json({
+      error: 'Failed to update task',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 }));
   }
 }
 

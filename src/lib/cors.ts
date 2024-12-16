@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
 const allowedOrigins = [
-  'https://kelly-task-manager.vercel.app'
+  'https://kelly-task-manager.vercel.app',
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'
 ];
 
 export function cors(response: NextResponse) {

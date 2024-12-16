@@ -14,6 +14,11 @@ const swaggerDocument = {
       description: 'Production server',
     },
   ],
+  security: [
+    {
+      bearerAuth: []
+    }
+  ],
   paths: {
     '/api/tasks': {
       get: {
@@ -142,6 +147,13 @@ const swaggerDocument = {
     },
   },
   components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT'
+      }
+    },
     schemas: {
       Task: {
         type: 'object',

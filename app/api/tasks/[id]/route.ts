@@ -81,6 +81,13 @@ export async function PUT(
     }
 
     const decodedToken = await verifyAuthToken(token);
+    if (!decodedToken) {
+      return cors(NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      ));
+    }
+
     const body = await request.json();
     console.log('Incoming request body:', body);
     console.log('User ID from token:', decodedToken.uid);
@@ -187,6 +194,12 @@ export async function DELETE(
     }
 
     const decodedToken = await verifyAuthToken(token);
+    if (!decodedToken) {
+      return cors(NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      ));
+    }
 
     // First check if the task exists and belongs to the user
     const existingTask = await prisma.task.findUnique({
@@ -214,6 +227,8 @@ export async function DELETE(
     );
   } catch (error) {
     console.error('Error in DELETE /api/tasks/[id]:', error);
+    console.error('Task ID:', params.id);
+    console.error('Decoded Token:', decodedToken);
     return cors(
       NextResponse.json({ 
         error: 'Failed to delete task',

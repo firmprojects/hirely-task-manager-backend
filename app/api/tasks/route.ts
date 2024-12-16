@@ -198,31 +198,55 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const updateData = {
       title: body.title,
       description: body.description || '',
+      updatedAt: new Date().toISOString()
     };
 
     console.log('Updating task in database...');
     task = await prisma.task.update({
-      where: { id: parseInt(params.id), userId: decodedToken.uid },
+      where: { 
+        id: parseInt(params.id), 
+        userId: decodedToken.uid 
+      },
       data: updateData
     });
     console.log('Updated task:', task);
 
   } catch (error) {
     console.error('Error in PUT /api/tasks/[id]:', error);
-    let errorMessage = 'Failed to update task';
+    
+    // Handle Prisma errors
     if (error instanceof PrismaClientKnownRequestError) {
-        // Handle known Prisma errors
-        if (error.code === 'P2025') {
-            errorMessage = 'Task not found';
-        } else if (error.code === 'P2002') {
-            errorMessage = 'Unique constraint failed';
-        }
-    } else {
-        // Log the full error for unexpected issues
-        console.error('Unexpected error:', error);
+      if (error.code === 'P2025') {
+        return cors(NextResponse.json(
+          { error: 'Task not found' },
+          { status: 404 }
+        ));
+      }
+      if (error.code === 'P2002') {
+        return cors(NextResponse.json(
+          { error: 'Unique constraint failed' },
+          { status: 409 }
+        ));
+      }
     }
+    
+    // Handle invalid ID format
+    if (error instanceof Error && error.message.includes('invalid input syntax')) {
+      return cors(NextResponse.json(
+        { error: 'Invalid task ID format' },
+        { status: 400 }
+      ));
+    }
+
+    // Log unexpected errors with full details in production
+    console.error('Unexpected error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
+
     return cors(NextResponse.json(
-      { error: errorMessage },
+      { error: 'An unexpected error occurred while updating the task' },
       { status: 500 }
     ));
   }

@@ -4,7 +4,8 @@ import type { NextRequest } from 'next/server';
 const allowedOrigins = [
   'https://hirely-taskmanager-frontend.netlify.app',
   'https://kelly-task-manager.vercel.app',
-  'http://localhost:5173' // Keep this for local development
+  'http://localhost:5173', // Keep this for local development
+  'http://localhost:3000'  // Added for local frontend
 ];
 
 export function middleware(request: NextRequest) {

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verifyAuthToken } from '@/lib/firebase';
-import { prisma } from '@/lib/prisma';
+import { prisma, withRetry } from '@/lib/prisma';
 import { headers } from 'next/headers';
 import { cors } from '@/lib/cors';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
@@ -35,14 +35,14 @@ export async function GET(request: Request) {
     console.log('Token verified successfully for user:', decodedToken.uid);
 
     console.log('Fetching tasks from database...');
-    const tasks = await prisma.task.findMany({
+    const tasks = await withRetry(() => prisma.task.findMany({
       where: {
         userId: decodedToken.uid
       },
       orderBy: {
         createdAt: 'desc'
       }
-    });
+    }));
     console.log(`Successfully retrieved ${tasks.length} tasks`);
 
     return cors(NextResponse.json({ tasks }));
@@ -116,13 +116,13 @@ export async function POST(request: Request) {
     }
 
     console.log('Creating new task in database...');
-    const task = await prisma.task.create({
+    const task = await withRetry(() => prisma.task.create({
       data: {
         title: body.title,
         description: body.description || '',
         userId: decodedToken.uid,
       }
-    });
+    }));
     console.log('Task created successfully:', task.id);
 
     return cors(NextResponse.json({ task }));
@@ -202,13 +202,13 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     };
 
     console.log('Updating task in database...');
-    task = await prisma.task.update({
+    task = await withRetry(() => prisma.task.update({
       where: { 
         id: parseInt(params.id), 
         userId: decodedToken.uid 
       },
       data: updateData
-    });
+    }));
     console.log('Updated task:', task);
 
   } catch (error) {

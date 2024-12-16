@@ -24,6 +24,25 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
   }
 });
 
+// Add retry logic for database operations
+export async function withRetry<T>(operation: () => Promise<T>, maxRetries = 3): Promise<T> {
+  let lastError;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (error instanceof Error && error.message.includes('terminating connection')) {
+        console.log(`Retry attempt ${i + 1} of ${maxRetries} after connection error`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+        continue;
+      }
+      throw error; // If it's not a connection error, throw immediately
+    }
+  }
+  throw lastError;
+}
+
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }

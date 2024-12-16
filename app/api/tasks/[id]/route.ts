@@ -121,6 +121,7 @@ export async function PUT(
       title,
       description: description || null,
       status: status || existingTask.status,
+      userId: decodedToken.uid
     };
 
     // Only update dueDate if it's provided

@@ -141,9 +141,37 @@ export async function PUT(
 
   } catch (error) {
     console.error('Error in PUT /api/tasks/[id]:', error);
+    
+    // Handle Prisma-specific errors
+    if (error instanceof Error) {
+      if (error.message.includes('Record to update not found')) {
+        return cors(NextResponse.json({
+          error: 'Task not found or you do not have permission to update it',
+          details: error.message
+        }, { status: 404 }));
+      }
+      
+      if (error.message.includes('Invalid `prisma.task.update()`')) {
+        return cors(NextResponse.json({
+          error: 'Invalid task data provided',
+          details: error.message
+        }, { status: 400 }));
+      }
+
+      // Handle date parsing errors
+      if (error.message.includes('Invalid date')) {
+        return cors(NextResponse.json({
+          error: 'Invalid date format',
+          details: 'Please provide the date in ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)'
+        }, { status: 400 }));
+      }
+    }
+
+    // Generic error response with details
     return cors(NextResponse.json({
       error: 'Failed to update task',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'An unexpected error occurred',
+      timestamp: new Date().toISOString()
     }, { status: 500 }));
   }
 }

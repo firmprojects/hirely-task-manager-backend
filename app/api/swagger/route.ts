@@ -10,7 +10,7 @@ const swaggerDocument = {
   },
   servers: [
     {
-      url: 'https://hirely-task-manager-backend.vercel.app',
+      url: 'https://kelly-task-manager.vercel.app',
       description: 'Production server',
     },
   ],

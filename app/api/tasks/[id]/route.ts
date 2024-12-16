@@ -228,7 +228,7 @@ export async function DELETE(
   } catch (error) {
     console.error('Error in DELETE /api/tasks/[id]:', error);
     console.error('Task ID:', params.id);
-    console.error('Decoded Token:', decodedToken);
+    // console.error('Decoded Token:', decodedToken);
     return cors(
       NextResponse.json({ 
         error: 'Failed to delete task',

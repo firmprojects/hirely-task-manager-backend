@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
 const allowedOrigins = [
-  'https://hirely-taskmanager-frontend.netlify.app',
   'https://kelly-task-manager.vercel.app'
 ];
 

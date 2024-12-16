@@ -41,11 +41,38 @@ export async function GET(request: Request) {
       },
       orderBy: {
         createdAt: 'desc'
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        dueDate: true,
+        status: true,
+        userId: true,
+        createdAt: true,
+        updatedAt: true
       }
     }));
     console.log(`Successfully retrieved ${tasks.length} tasks`);
 
-    return cors(NextResponse.json({ tasks }));
+    // Format the date before sending it back
+    const formattedTasks = tasks
+      .filter(task => task !== null)
+      .map(task => {
+        const dueDate = task.dueDate 
+          ? task.dueDate.toISOString().split('T')[0] 
+          : null;
+        
+        return {
+          ...task,
+          dueDate,
+          // Ensure status is always set
+          status: task.status || 'PENDING'
+        };
+      });
+
+    console.log('Formatted tasks:', formattedTasks);
+    return cors(NextResponse.json({ tasks: formattedTasks }));
 
   } catch (error) {
     console.error('Error in GET /api/tasks:', error);
@@ -120,12 +147,24 @@ export async function POST(request: Request) {
       data: {
         title: body.title,
         description: body.description || '',
+        dueDate: body.dueDate ? new Date(body.dueDate) : null,
+        status: body.status || 'PENDING',
         userId: decodedToken.uid,
       }
     }));
-    console.log('Task created successfully:', task.id);
 
-    return cors(NextResponse.json({ task }));
+    // Format the date before sending it back
+    const dueDate = task.dueDate 
+      ? task.dueDate.toISOString().split('T')[0] 
+      : null;
+    
+    const formattedTask = {
+      ...task,
+      dueDate
+    };
+
+    console.log('Task created successfully:', task.id);
+    return cors(NextResponse.json({ task: formattedTask }));
 
   } catch (error) {
     console.error('Error in POST /api/tasks:', error);
@@ -211,6 +250,18 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }));
     console.log('Updated task:', task);
 
+    // Format the date before sending it back
+    const dueDate = task.dueDate 
+      ? task.dueDate.toISOString().split('T')[0] 
+      : null;
+    
+    const formattedTask = {
+      ...task,
+      dueDate
+    };
+
+    return cors(NextResponse.json({ task: formattedTask }));
+
   } catch (error) {
     console.error('Error in PUT /api/tasks/[id]:', error);
     
@@ -250,8 +301,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       { status: 500 }
     ));
   }
-
-  return cors(NextResponse.json({ task }));
 }
 
 // OPTIONS /api/tasks

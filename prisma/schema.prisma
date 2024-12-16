@@ -11,7 +11,7 @@ model Task {
   id          Int       @id @default(autoincrement())
   title       String
   description String?
-  dueDate     DateTime?
+  dueDate     DateTime? @db.Date
   status      String    @default("PENDING")
   userId      String    // Firebase user ID
   createdAt   DateTime  @default(now())
